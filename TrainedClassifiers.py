@@ -12,8 +12,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 
 reader = Reader()
-(trainingData, testingData) = reader.read_from('D:/Facultate/Licenta/CS229-master/JAFFE')
-dataset = reader.read_from_with_target('D:/Facultate/Licenta/CS229-master/JAFFE')
+(trainingData, testingData) = reader.read_from('datasets/dataset')
+dataset = reader.read_from_with_target('datasets/dataset')
 
 count = 0
 X = []
@@ -55,7 +55,7 @@ print(randomForrest.score(X_test, y_test))
 
 # Adaboost
 decisionTree = DecisionTreeClassifier(max_depth=10)
-adaBoostModel = AdaBoostClassifier(n_estimators=100, random_state=0, learning_rate=1.5, algorithm='SAMME', base_estimator=decisionTree)
+adaBoostModel = AdaBoostClassifier(n_estimators=300, random_state=0, learning_rate=2.5, algorithm='SAMME', base_estimator=decisionTree)
 adaBoostModel.fit(X_train, y_train)
 print(adaBoostModel.predict(X_test))
 print(adaBoostModel.score(X_test, y_test))

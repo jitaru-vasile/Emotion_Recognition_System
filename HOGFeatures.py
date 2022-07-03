@@ -1,23 +1,24 @@
+import cv2
 import matplotlib.pyplot as plt
 from skimage.feature import hog
 from skimage import data, exposure
 import cv2 as cv
-
-from HogDescriptor import Hog_descriptor
+import numpy as np
 from SpecialImage import SpecialImage
+
+
+def rgb2gray(rgb):
+    return np.dot(rgb[..., :3], [0.2989, 0.5870, 0.1140])
 
 
 class HogFeature:
     def get_hog_features(self, data):
         blur = cv.GaussianBlur(data.image, (5, 5), 0)
         fd, hog_image = hog(blur, orientations=8, pixels_per_cell=(8, 8),
-                             cells_per_block=(2, 2), visualize=True, channel_axis=-1, transform_sqrt=True)
+                            cells_per_block=(2, 2), visualize=True, channel_axis=-1, transform_sqrt=True)
 
-        # hog1 = Hog_descriptor(blur, cell_size=8, bin_size=8)
-        # fd, hog_image = hog1.extract()
+        #fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
 
-        # fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
-        #
         # ax1.axis('off')
         # ax1.imshow(data.image, cmap=plt.cm.gray)
         # ax1.set_title('Input Image')

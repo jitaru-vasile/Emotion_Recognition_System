@@ -29,16 +29,16 @@ while True:
             emotions = ["angry", "disgusted", "fear", "happy", "neutral", "sad", "surprised"]
             emotionId = loaded_model.predict(X)[0]
             (x, yy, w, h) = hogImage.detectedFace
-            cv2.rectangle(frame, (x, yy), (x + w, yy + h), (255, 0, 0), 2)
+            #cv2.rectangle(frame, (x, yy), (x + w, yy + h), (255, 0, 0), 2)
             font = cv2.FONT_HERSHEY_SIMPLEX
             org = (x + w, yy + h)
             thickness = 1
             emotionQueue.append(emotions[emotionId])
             filteredEmotion = max(set(emotionQueue), key=emotionQueue.count)
-            cv2.putText(frame, filteredEmotion,
-                        org, font, 1,
-                        (255, 0, 0), thickness,
-                        cv2.LINE_AA)
+            #cv2.putText(frame, filteredEmotion,
+             #           org, font, 1,
+              #          (255, 0, 0), thickness,
+               #         cv2.LINE_AA)
 
             if emotionQueue.__len__() == 10:
                 emotionQueue.pop(0)

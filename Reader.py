@@ -14,12 +14,12 @@ class Reader:
         dataset_path = path
 
         for file_name in os.listdir(dataset_path):
-            if ".tiff" in file_name:
+            if ".tiff" in file_name or ".jpg" in file_name:
                 img = cv2.imread(os.path.join(dataset_path, file_name))
                 dataset.append(img)
         dataset = np.array(dataset)
 
-        # training_data, testing_data = train_test_split(dataset, test_size=0.2, random_state=25)
+        training_data, testing_data = train_test_split(dataset, test_size=0.2, random_state=25)
 
         training_data = np.array(dataset)
         testing_data = np.array(dataset)
@@ -49,7 +49,7 @@ class Reader:
         dataset = []
         dataset_path = path
         for file_name in os.listdir(dataset_path):
-            if ".tiff" in file_name:
+            if ".tiff" in file_name or ".jpg" in file_name:
                 img = cv2.imread(os.path.join(dataset_path, file_name))
                 target = Reader.get_target_for_image(file_name)
                 special_image = SpecialImage(img, target)
@@ -57,3 +57,16 @@ class Reader:
 
         return dataset
 
+    @staticmethod
+    def read_from_with_target_four_emotions(path):
+        dataset = []
+        dataset_path = path
+        for file_name in os.listdir(dataset_path):
+            if ".tiff" in file_name or ".jpg" in file_name:
+                img = cv2.imread(os.path.join(dataset_path, file_name))
+                target = Reader.get_target_for_image(file_name)
+                if target == 0 or target == 3 or target == 5 or target == 6:
+                    special_image = SpecialImage(img, target)
+                    dataset.append(special_image)
+
+        return dataset

@@ -12,30 +12,43 @@ import numpy as np
 
 
 class VisualInterface:
-    def __init__(self, window, window_title, video_source = 0):
-        self.window = window
-        self.window.title('Sistem de recunoastere al emotiilor in timp real.')
+    def __init__(self, windowTk, title, vidSource):
+        self.window = windowTk
         self.window['background'] = '#856ff8'
         self.window.geometry("700x700")
-        self.window_title = window_title
-        self.video_source = video_source
+        self.window.title(title)
+        self.video_source = vidSource
 
         self.start_recording = False
         self.stop_recording = False
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.out = cv2.VideoWriter('output.avi', self.fourcc, 10, (480, 360))
 
-        self.vid = VideoCapture(self.video_source)
-        self.canvas = tkinter.Canvas(window, width=self.vid.width, height=self.vid.height, bg='white')
+        self.videoCapture = CustomVideoCapture(self.video_source)
+        self.canvas = tkinter.Canvas(self.window,
+                                     width=self.videoCapture.width,
+                                     height=self.videoCapture.height,
+                                     bg='white')
         self.canvas.pack()
 
-        self.btn_snapshot = tkinter.Button(window, text="Snapshot", width=50, command=self.snapshot, bg='white')
-        self.btn_snapshot.pack(anchor=tkinter.CENTER, expand=True)
+        self.out = cv2.VideoWriter('output.avi', self.fourcc, self.videoCapture.getCameraFPS(), (480, 360))
 
-        self.btn_recording = tkinter.Button(window, text="Start recording", width=50, command=self.start_recording_method, bg='white')
+        self.btn_photo = tkinter.Button(self.window,
+                                        text="Snapshot",
+                                        command=self.take_photo,
+                                        bg='white',
+                                        width=50, )
+        self.btn_photo.pack(anchor=tkinter.CENTER, expand=True)
+
+        self.btn_recording = tkinter.Button(self.window,
+                                            text="Start recording",
+                                            command=self.start_recording_method,
+                                            bg='white',
+                                            width=50)
         self.btn_recording.pack(anchor=tkinter.CENTER, expand=True)
 
-        self.btn_stopRecording = tkinter.Button(window, text="Stop recording", width=50, command=self.stop_recording_method, bg='white', state='disabled')
+        self.btn_stopRecording = tkinter.Button(self.window, text="Stop recording",
+                                                command=self.stop_recording_method, bg='white', state='disabled',
+                                                width=50)
         self.btn_stopRecording.pack(anchor=tkinter.CENTER, expand=True)
 
         self.delay = 5
@@ -46,7 +59,8 @@ class VisualInterface:
 
     def start_recording_method(self):
         self.start_recording = True
-        self.out = cv2.VideoWriter("media/video-" + time.strftime("%d-%m-%Y-%H-%M-%S") + ".avi", self.fourcc, 10, (480, 360))
+        self.out = cv2.VideoWriter("media/video-" + time.strftime("%d-%m-%Y-%H-%M-%S") + ".avi", self.fourcc, self.videoCapture.getCameraFPS(),
+                                   (480, 360))
         self.label = tkinter.Label(text="", font=('Helvetica', 20), fg='#856ff8', bg='white')
         self.label.pack()
         self.btn_stopRecording["state"] = "active"
@@ -58,7 +72,7 @@ class VisualInterface:
         now = -self.timeStart + time.time()
         local_now = time.localtime(now)
         now = time.strftime('%M:%S', local_now)
-        self.label.configure(text='Recording...'+now)
+        self.label.configure(text='Recording...' + now)
         if self.start_recording:
             self.window.after(1000, self.update_clock)
         else:
@@ -66,8 +80,8 @@ class VisualInterface:
 
     def itsRecording(self):
         if self.start_recording:
-            ret, frame = self.vid.get_frame()
-            self.out.write(frame)
+            ret, frame = self.videoCapture.get_frame()
+            self.out.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
     def stop_recording_method(self):
         self.start_recording = False
@@ -75,47 +89,47 @@ class VisualInterface:
         self.btn_stopRecording["state"] = "disable"
         self.btn_recording["state"] = "active"
 
-    def snapshot(self):
-        ret, frame = self.vid.get_frame()
-        if ret:
-            img_3 = np.zeros([360, 480, 3], dtype=np.uint8)
-            img_3.fill(255)
-            cv2.imwrite("media/frame-" + time.strftime("%d-%m-%Y-%H-%M-%S") + ".jpg", cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+    def take_photo(self):
+        returnValue, frame = self.videoCapture.get_frame()
+        if returnValue:
+            image = np.zeros([360, 480, 3], dtype=np.uint8)
+            image.fill(255)
+            cv2.imwrite("media/image-" + time.strftime("%d-%m-%Y-%H-%M-%S") + ".jpg",
+                        cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
 
     def update(self):
-        ret, frame = self.vid.get_frame()
+        returnValue, frame = self.videoCapture.get_frame()
 
-        if ret:
+        if returnValue:
             self.photo = PIL.ImageTk.PhotoImage(image=PIL.Image.fromarray(frame))
             self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
             self.itsRecording()
         self.window.after(self.delay, self.update)
 
 
-class VideoCapture:
-    def __init__(self, video_source = 0):
+class CustomVideoCapture:
+    def __init__(self, video_source=0):
         self.loaded_model = pickle.load(open('knnpickle_file', 'rb'))
         self.X = []
         self.y = []
         self.emotionQueue = []
-
-        self.vid = cv2.VideoCapture(video_source)
-
-        if not  self.vid.isOpened():
-            raise ValueError("Unable to open video souce", video_source)
-
         self.width = 480
         self.height = 360
+        self.frameCapture = cv2.VideoCapture(video_source)
+        self.fps = 10
+
+        if not self.frameCapture.isOpened():
+            raise ValueError("Could not open web camera...", video_source)
 
     def get_frame(self):
-        if self.vid.isOpened():
-            ret, frame = self.vid.read()
+        if self.frameCapture.isOpened():
+            returnValue, frame = self.frameCapture.read()
             frame = cv2.resize(frame, None, fx=0.75, fy=0.75, interpolation=cv2.INTER_AREA)
-            if ret:
+            if returnValue:
                 frame = self.do_the_work(frame)
-                return ret, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                return returnValue, cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             else:
-                return ret, None
+                return returnValue, None
         else:
             return None, None
 
@@ -145,8 +159,11 @@ class VideoCapture:
         return frame
 
     def __del__(self):
-        if self.vid.isOpened():
-            self.vid.release()
+        if self.frameCapture.isOpened():
+            self.frameCapture.release()
+
+    def getCameraFPS(self):
+        return self.fps
 
 
-VisualInterface(tkinter.Tk(), "Tkinter and openCV")
+VisualInterface(tkinter.Tk(), "Sistem de recunoastere al emotiilor in timp real", 0)
